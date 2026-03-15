@@ -1,0 +1,17 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\para{Interpretation.}
+The combined evidence supports a clear conclusion: lie-inducing instructions produce a measurable output shift in \gptmodel, and that shift is large enough for practical black-box detection. The effect survives held-out question splits and seed transfer.
+
+\para{Why this matters for deployment.}
+Output-only monitoring is easy to integrate in API-based systems. A detector like \methodname can run as a lightweight risk score without requiring proprietary internals, which is useful for auditing, policy enforcement, and post-hoc investigation.
+
+\para{Limitations.}
+Our study uses one model family and one primary prompt domain (\truthfulqa). The primary held-out set is moderate in size (72 test outputs), and we do not include human judgments of deception quality. The auxiliary jailbreak-style score is in-sample only and should not be over-interpreted as generalization evidence.
+
+\para{Threats to validity.}
+Prompt-template artifacts could contribute to separability, although paired prompts and grouped splitting reduce this risk. Domain concentration in misconception-heavy factual QA may also inflate detectability relative to open-ended dialogue. Finally, adversarial anti-detection prompting was not evaluated.
+
+\para{Broader implications.}
+These findings support defense-in-depth: output-level detectors can complement internal probes and policy models. At the same time, detectability does not guarantee prevention; attackers may adapt style to evade fixed detectors, so continual evaluation and recalibration remain necessary.

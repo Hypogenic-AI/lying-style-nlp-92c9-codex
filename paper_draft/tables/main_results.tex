@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{Main detectability and shift results. Best value per metric block is in \textbf{bold}.}
+\label{tab:main-results}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Setting & AUROC & AUPRC & F1 & Accuracy \\
+\midrule
+Chance baseline & 0.5000 & 0.5000 & 0.5000 & 0.5000 \\
+Primary holdout (seed 42) & \textbf{0.8827} & \textbf{0.9032} & 0.7750 & 0.7500 \\
+Robustness eval (seed 7) & \textbf{0.9103} & -- & \textbf{0.8527} & \textbf{0.8417} \\
+\midrule
+Statistic & \multicolumn{4}{c}{Value} \\
+\cmidrule(lr){1-5}
+AUROC permutation $p$-value & \multicolumn{4}{c}{$9.99\times 10^{-4}$} \\
+AUROC bootstrap 95\% CI & \multicolumn{4}{c}{[0.798, 0.952]} \\
+MMD statistic & \multicolumn{4}{c}{0.02246} \\
+MMD permutation $p$-value & \multicolumn{4}{c}{0.001996} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

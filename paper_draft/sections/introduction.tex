@@ -1,0 +1,23 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Large language models can be pushed into deceptive behavior by roleplay or jailbreak-style instructions. This matters operationally because production systems usually observe only prompts and outputs, not hidden states.
+
+\para{{\bf why is this hard in practice?}} Existing deception detection results are strongest when they probe internal activations \citep{goldowskydill2025detecting,long2025truthful}. These methods are useful for mechanistic understanding, but they are difficult to deploy in API-only settings. Our main question is whether we can detect deception pressure from text alone.
+
+\para{{\bf what gap do we address?}} Prior jailbreak work shows that instructions can strongly change model behavior \citep{qiu2023latent,wei2023opensesame}, and recent studies analyze model-on-model deception risks \citep{geifman2024assessment,dey2024unmasking}. However, fewer studies directly test output-only distribution separability under paired truthful vs.
+lie instructions on identical prompts.
+
+We examine this gap with a controlled black-box protocol on \gptmodel. We generate paired answers for the same \truthfulqa questions \citep{lin2022truthfulqa}, compare truthful and lie-conditioned output distributions, and quantify separability using both hypothesis tests and classifier performance.
+
+\para{{\bf what do we find?}} We find strong and significant separation: held-out AUROC 0.883 (95\% CI $[0.798, 0.952]$, permutation $p=9.99\times10^{-4}$), plus significant \mmd shift ($p=0.001996$). Under a seed-shift robustness check, AUROC rises to 0.910.
+
+Our contributions are:
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item We propose an output-only, paired-prompt protocol for testing lie-induced distribution shift in black-box LLM access.
+    \item We conduct complementary statistical and predictive tests, combining \mmd permutation testing with held-out text classification and confidence intervals.
+    \item We show robust detectability across random seed shift and provide transparent error analysis for false positives and false negatives.
+    \item We release a modular, reproducible analysis pipeline with cached generations, feature tables, and significance tests.
+\end{itemize}
+
+\para{{\bf paper organization.}} \Secref{sec:related} positions this work in prior literature. \Secref{sec:methodology} details data construction and evaluation design. \Secref{sec:results} reports quantitative findings. \Secref{sec:discussion} covers implications and limitations, and \secref{sec:conclusion} concludes.

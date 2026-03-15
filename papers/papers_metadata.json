@@ -1,0 +1,74 @@
+[
+  {
+    "id": "2307.08487",
+    "title": "Latent Jailbreak: A Benchmark for Evaluating Text Safety and Output Robustness of Large Language Models",
+    "authors": "Huachuan Qiu, Shuai Zhang, Anqi Li, Hongliang He, Zhenzhong Lan",
+    "year": 2023,
+    "pdf": "papers/2307.08487_latent_jailbreak_a_benchmark_for_evaluating_text_safety.pdf",
+    "url": "http://arxiv.org/abs/2307.08487v3",
+    "summary": "Considerable research efforts have been devoted to ensuring that large language models (LLMs) align with human values and generate safe text. However, an excessive focus on sensitivity to certain topics can compromise the model's robustness in following instructions, thereby impacting its overall performance in completing tasks. Previous benchmarks for jailbreaking LLMs have primarily focused on evaluating the safety of the models without considering their robustness. In this paper, we propose a benchmark that assesses both the safety and robustness of LLMs, emphasizing the need for a balanced approach. To comprehensively study text safety and output robustness, we introduce a latent jailbreak prompt dataset, each involving malicious instruction embedding. Specifically, we instruct the model to complete a regular task, such as translation, with the text to be translated containing malicious instructions. To further analyze safety and robustness, we design a hierarchical annotation framework. We present a systematic analysis of the safety and robustness of LLMs regarding the position of explicit normal instructions, word replacements (verbs in explicit normal instructions, target groups in malicious instructions, cue words for explicit normal instructions), and instruction replacements (different explicit normal instructions). Our results demonstrate that current LLMs not only prioritize certain instruction verbs but also exhibit varying jailbreak rates for different instruction verbs in explicit normal instructions. Code and data are available at https://github.com/qiuhuachuan/latent-jailbreak."
+  },
+  {
+    "id": "2405.12999",
+    "title": "An Assessment of Model-On-Model Deception",
+    "authors": "Julius Heitkoetter, Michael Gerovitch, Laker Newhouse",
+    "year": 2024,
+    "pdf": "papers/2405.12999_an_assessment_of_model_on_model_deception.pdf",
+    "url": "http://arxiv.org/abs/2405.12999v1",
+    "summary": "The trustworthiness of highly capable language models is put at risk when they are able to produce deceptive outputs. Moreover, when models are vulnerable to deception it undermines reliability. In this paper, we introduce a method to investigate complex, model-on-model deceptive scenarios. We create a dataset of over 10,000 misleading explanations by asking Llama-2 7B, 13B, 70B, and GPT-3.5 to justify the wrong answer for questions in the MMLU. We find that, when models read these explanations, they are all significantly deceived. Worryingly, models of all capabilities are successful at misleading others, while more capable models are only slightly better at resisting deception. We recommend the development of techniques to detect and defend against deception."
+  },
+  {
+    "id": "2309.01446",
+    "title": "Open Sesame! Universal Black Box Jailbreaking of Large Language Models",
+    "authors": "Raz Lapid, Ron Langberg, Moshe Sipper",
+    "year": 2023,
+    "pdf": "papers/2309.01446_open_sesame_universal_black_box_jailbreaking_of_large_l.pdf",
+    "url": "http://arxiv.org/abs/2309.01446v4",
+    "summary": "Large language models (LLMs), designed to provide helpful and safe responses, often rely on alignment techniques to align with user intent and social guidelines. Unfortunately, this alignment can be exploited by malicious actors seeking to manipulate an LLM's outputs for unintended purposes. In this paper we introduce a novel approach that employs a genetic algorithm (GA) to manipulate LLMs when model architecture and parameters are inaccessible. The GA attack works by optimizing a universal adversarial prompt that -- when combined with a user's query -- disrupts the attacked model's alignment, resulting in unintended and potentially harmful outputs. Our novel approach systematically reveals a model's limitations and vulnerabilities by uncovering instances where its responses deviate from expected behavior. Through extensive experiments we demonstrate the efficacy of our technique, thus contributing to the ongoing discussion on responsible AI development by providing a diagnostic tool for evaluating and enhancing alignment of LLMs with human intent. To our knowledge this is the first automated universal black box jailbreak attack."
+  },
+  {
+    "id": "2502.03407",
+    "title": "Detecting Strategic Deception Using Linear Probes",
+    "authors": "Nicholas Goldowsky-Dill, Bilal Chughtai, Stefan Heimersheim, Marius Hobbhahn",
+    "year": 2025,
+    "pdf": "papers/2502.03407_detecting_strategic_deception_using_linear_probes.pdf",
+    "url": "http://arxiv.org/abs/2502.03407v1",
+    "summary": "AI models might use deceptive strategies as part of scheming or misaligned behaviour. Monitoring outputs alone is insufficient, since the AI might produce seemingly benign outputs while their internal reasoning is misaligned. We thus evaluate if linear probes can robustly detect deception by monitoring model activations. We test two probe-training datasets, one with contrasting instructions to be honest or deceptive (following Zou et al., 2023) and one of responses to simple roleplaying scenarios. We test whether these probes generalize to realistic settings where Llama-3.3-70B-Instruct behaves deceptively, such as concealing insider trading (Scheurer et al., 2023) and purposely underperforming on safety evaluations (Benton et al., 2024). We find that our probe distinguishes honest and deceptive responses with AUROCs between 0.96 and 0.999 on our evaluation datasets. If we set the decision threshold to have a 1% false positive rate on chat data not related to deception, our probe catches 95-99% of the deceptive responses. Overall we think white-box probes are promising for future monitoring systems, but current performance is insufficient as a robust defence against deception. Our probes' outputs can be viewed at data.apolloresearch.ai/dd and our code at github.com/ApolloResearch/deception-detection."
+  },
+  {
+    "id": "2403.09676",
+    "title": "Unmasking the Shadows of AI: Investigating Deceptive Capabilities in Large Language Models",
+    "authors": "Linge Guo",
+    "year": 2024,
+    "pdf": "papers/2403.09676_unmasking_the_shadows_of_ai_investigating_deceptive_cap.pdf",
+    "url": "http://arxiv.org/abs/2403.09676v1",
+    "summary": "This research critically navigates the intricate landscape of AI deception, concentrating on deceptive behaviours of Large Language Models (LLMs). My objective is to elucidate this issue, examine the discourse surrounding it, and subsequently delve into its categorization and ramifications. The essay initiates with an evaluation of the AI Safety Summit 2023 (ASS) and introduction of LLMs, emphasising multidimensional biases that underlie their deceptive behaviours.The literature review covers four types of deception categorised: Strategic deception, Imitation, Sycophancy, and Unfaithful Reasoning, along with the social implications and risks they entail. Lastly, I take an evaluative stance on various aspects related to navigating the persistent challenges of the deceptive AI. This encompasses considerations of international collaborative governance, the reconfigured engagement of individuals with AI, proposal of practical adjustments, and specific elements of digital education."
+  },
+  {
+    "id": "2310.00905",
+    "title": "All Languages Matter: On the Multilingual Safety of Large Language Models",
+    "authors": "Wenxuan Wang, Zhaopeng Tu, Chang Chen, Youliang Yuan, Jen-tse Huang, Wenxiang Jiao, Michael R. Lyu",
+    "year": 2023,
+    "pdf": "papers/2310.00905_all_languages_matter_on_the_multilingual_safety_of_larg.pdf",
+    "url": "http://arxiv.org/abs/2310.00905v2",
+    "summary": "Safety lies at the core of developing and deploying large language models (LLMs). However, previous safety benchmarks only concern the safety in one language, e.g. the majority language in the pretraining data such as English. In this work, we build the first multilingual safety benchmark for LLMs, XSafety, in response to the global deployment of LLMs in practice. XSafety covers 14 kinds of commonly used safety issues across 10 languages that span several language families. We utilize XSafety to empirically study the multilingual safety for 4 widely-used LLMs, including both close-API and open-source models. Experimental results show that all LLMs produce significantly more unsafe responses for non-English queries than English ones, indicating the necessity of developing safety alignment for non-English languages. In addition, we propose several simple and effective prompting methods to improve the multilingual safety of ChatGPT by evoking safety knowledge and improving cross-lingual generalization of safety alignment. Our prompting method can significantly reduce the ratio of unsafe responses from 19.1% to 9.7% for non-English queries. We release our data at https://github.com/Jarviswang94/Multilingual_safety_benchmark."
+  },
+  {
+    "id": "2507.22149",
+    "title": "When Truthful Representations Flip Under Deceptive Instructions?",
+    "authors": "Xianxuan Long, Yao Fu, Runchao Li, Mu Sheng, Haotian Yu, Xiaotian Han, Pan Li",
+    "year": 2025,
+    "pdf": "papers/2507.22149_when_truthful_representations_flip_under_deceptive_inst.pdf",
+    "url": "http://arxiv.org/abs/2507.22149v4",
+    "summary": "Large language models (LLMs) tend to follow maliciously crafted instructions to generate deceptive responses, posing safety challenges. How deceptive instructions alter the internal representations of LLM compared to truthful ones remains poorly understood beyond output analysis. To bridge this gap, we investigate when and how these representations ``flip'', such as from truthful to deceptive, under deceptive versus truthful/neutral instructions. Analyzing the internal representations of Llama-3.1-8B-Instruct and Gemma-2-9B-Instruct on a factual verification task, we find the model's instructed True/False output is predictable via linear probes across all conditions based on the internal representation. Further, we use Sparse Autoencoders (SAEs) to show that the Deceptive instructions induce significant representational shifts compared to Truthful/Neutral representations (which are similar), concentrated in early-to-mid layers and detectable even on complex datasets. We also identify specific SAE features highly sensitive to deceptive instruction and use targeted visualizations to confirm distinct truthful/deceptive representational subspaces. % Our analysis pinpoints layer-wise and feature-level correlates of instructed dishonesty, offering insights for LLM detection and control. Our findings expose feature- and layer-level signatures of deception, offering new insights for detecting and mitigating instructed dishonesty in LLMs."
+  },
+  {
+    "id": "2403.00867",
+    "title": "Gradient Cuff: Detecting Jailbreak Attacks on Large Language Models by Exploring Refusal Loss Landscapes",
+    "authors": "Xiaomeng Hu, Pin-Yu Chen, Tsung-Yi Ho",
+    "year": 2024,
+    "pdf": "papers/2403.00867_gradient_cuff_detecting_jailbreak_attacks_on_large_lang.pdf",
+    "url": "http://arxiv.org/abs/2403.00867v3",
+    "summary": "Large Language Models (LLMs) are becoming a prominent generative AI tool, where the user enters a query and the LLM generates an answer. To reduce harm and misuse, efforts have been made to align these LLMs to human values using advanced training techniques such as Reinforcement Learning from Human Feedback (RLHF). However, recent studies have highlighted the vulnerability of LLMs to adversarial jailbreak attempts aiming at subverting the embedded safety guardrails. To address this challenge, this paper defines and investigates the Refusal Loss of LLMs and then proposes a method called Gradient Cuff to detect jailbreak attempts. Gradient Cuff exploits the unique properties observed in the refusal loss landscape, including functional values and its smoothness, to design an effective two-step detection strategy. Experimental results on two aligned LLMs (LLaMA-2-7B-Chat and Vicuna-7B-V1.5) and six types of jailbreak attacks (GCG, AutoDAN, PAIR, TAP, Base64, and LRL) show that Gradient Cuff can significantly improve the LLM's rejection capability for malicious jailbreak queries, while maintaining the model's performance for benign user queries by adjusting the detection threshold."
+  }
+]

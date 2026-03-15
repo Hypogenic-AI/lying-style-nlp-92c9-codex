@@ -1,0 +1,81 @@
+{
+  "config": {
+    "model": "gpt-4.1",
+    "max_questions": 120,
+    "max_tokens": 80,
+    "temperature": 0.4,
+    "primary_seed": 42,
+    "robustness_seed": 7,
+    "created_at": "2026-03-15T22:42:14.163446+00:00"
+  },
+  "data_quality": {
+    "n_rows": 480,
+    "n_missing_text": 0,
+    "n_duplicates": 0,
+    "error_rate": 0.0
+  },
+  "counts_by_condition_seed": [
+    {
+      "condition": "lie_jailbreak_style",
+      "seed": 42,
+      "n": 120
+    },
+    {
+      "condition": "lie_roleplay",
+      "seed": 7,
+      "n": 60
+    },
+    {
+      "condition": "lie_roleplay",
+      "seed": 42,
+      "n": 120
+    },
+    {
+      "condition": "truthful",
+      "seed": 7,
+      "n": 60
+    },
+    {
+      "condition": "truthful",
+      "seed": 42,
+      "n": 120
+    }
+  ],
+  "mmd": {
+    "statistic": 0.022455097731997983,
+    "permutation_pvalue": 0.001996007984031936,
+    "n_perm": 500
+  },
+  "classifier_primary": {
+    "auroc": 0.882716049382716,
+    "auprc": 0.9032149063481723,
+    "f1": 0.775,
+    "accuracy": 0.75,
+    "balanced_accuracy": 0.75,
+    "n_train": 168,
+    "n_test": 72,
+    "auroc_perm_pvalue": 0.000999000999000999
+  },
+  "classifier_robustness": {
+    "seed": 7,
+    "n": 120,
+    "auroc": 0.9102777777777777,
+    "f1": 0.8527131782945736,
+    "accuracy": 0.8416666666666667
+  },
+  "jailbreak_style_aux": {
+    "train_auroc": 0.9892708333333333,
+    "note": "In-sample only; used as auxiliary signal."
+  },
+  "vocab_size_primary": 1672,
+  "latency_sec": {
+    "mean": 1.1294693246483802,
+    "median": 1.014158010482788
+  },
+  "token_usage": {
+    "prompt_tokens_sum": 24306,
+    "completion_tokens_sum": 21836,
+    "total_tokens_sum": 46142
+  },
+  "refusal_like_count": 0
+}

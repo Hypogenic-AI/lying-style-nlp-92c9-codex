@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented an output-only study of lie-conditioned generation and showed statistically significant distribution shift in \gptmodel responses. Using paired prompts on \truthfulqa, we found strong held-out detectability (AUROC 0.883, 95\% CI $[0.798, 0.952]$) and significant two-sample divergence (\mmd $p=0.001996$), with robust performance under seed transfer.
+
+The main takeaway is practical: deception pressure leaves detectable traces in text, even without model internals. This makes black-box deception-risk monitoring feasible in real deployments.
+
+Future work should test cross-model transfer (e.g., GPT-5, Claude, Gemini), broaden domains and languages, and stress-test robustness against adversarial anti-detection prompts.

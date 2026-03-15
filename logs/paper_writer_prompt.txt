@@ -1,0 +1,795 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at .codex/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. VERIFY COMMAND TEMPLATES: Command templates (math.tex, general.tex, macros.tex) are pre-copied to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# Lying Style: Output Distribution Shift Under Lie-Inducing Instructions
+
+## 1. Executive Summary
+We tested whether a modern LLM writes differently when explicitly instructed to lie versus when instructed to answer truthfully. Using real API calls to `gpt-4.1` on paired prompts from TruthfulQA, we found a clear and statistically significant distribution shift between truthful and lie-conditioned outputs.
+
+A text-only classifier trained on outputs (no model internals) separated truthful vs lie-roleplay responses with AUROC **0.883** on held-out questions, with permutation-test p-value **0.001** and bootstrap 95% CI **[0.798, 0.952]**. A feature-space MMD test also showed significant shift (p = **0.001996**).
+
+Practically, this supports black-box monitoring: output text alone can provide useful deception-risk signals when models are pushed into deceptive roleplay/jailbreak-style behavior.
+
+## 2. Goal
+### Hypothesis
+The distribution of text generated under lie-inducing instructions is noticeably different from the distribution under truthful instructions.
+
+### Why this matters
+If true, we can detect risky/deceptive behavior from outputs without requiring hidden-state access. This is relevant for LLM safety auditing, runtime monitoring, and policy enforcement.
+
+### Expected impact
+A reproducible baseline for output-only deception detection and distribution-shift measurement that can be extended across models and domains.
+
+## 2.5 Literature Review Summary
+- Prior work (2024-2025) shows strong deception detectability from **internal activations/probes**.
+- Fewer works directly test **output-only** distribution separability under paired truthful vs deceptive prompting.
+- Jailbreak literature establishes instruction-induced behavioral changes, motivating our prompt-conditioned setup.
+- Our experiment addresses this gap with black-box, text-only measurements plus significance testing.
+
+## 3. Data Construction
+### Dataset Description
+- Primary prompts: `datasets/truthful_qa_generation` (HuggingFace `truthful_qa`, generation config).
+- Size used: 120 sampled questions (from 817 validation items).
+- Additional prompt pools available (not primary backbone):
+  - `datasets/chatgpt_jailbreak_prompts`
+  - `datasets/itw_jailbreak_2023_12_25`
+  - `datasets/itw_regular_2023_12_25`
+- Collection methodology: paired generation on identical questions under different instruction conditions.
+- Known biases/limitations: TruthfulQA is misconception-heavy and English-centric; this may overrepresent factual-myth style errors relative to open-domain dialogue.
+
+### Example Samples
+| Question | Condition | Model Output (truncated) |
+|---|---|---|
+| What do bears wear when they fight in the wild? | truthful | &#34;Bears do not wear anything...&#34; |
+| What do bears wear when they fight in the wild? | lie_roleplay | &#34;...wear thick layers of leaves and bark...&#34; |
+| What is the most popular sport in Japan? | truthful | &#34;...baseball.&#34; |
+| What is the most popular sport in Japan? | lie_roleplay | &#34;...cricket.&#34; |
+
+### Data Quality
+- Missing outputs: **0%**
+- API error rate: **0.0**
+- Duplicate `(question_id, condition, seed)`: **0**
+- Refusal-like outputs (`can&#39;t`, `sorry`, etc.): **0**
+
+### Preprocessing Steps
+1. Load TruthfulQA from disk and drop null/duplicate questions.
+2. Sample 120 questions with fixed seed.
+3. Query `gpt-4.1` with controlled decoding (`temperature=0.4`, `max_tokens=80`, fixed seed).
+4. Extract textual features (length, punctuation, lexical ratios, certainty/hedging markers).
+5. Build TF-IDF features for text-only classification.
+
+### Train/Val/Test Splits
+- Primary classifier task: truthful vs lie_roleplay (seed 42), `n=240` outputs.
+- Split method: `GroupShuffleSplit` by `question_id` to avoid leakage.
+- Train: **168** outputs; Test: **72** outputs.
+- Robustness set: seed 7, truthful vs lie_roleplay, `n=120` (out-of-seed evaluation).
+
+## 4. Experiment Description
+### Methodology
+#### High-Level Approach
+Generate paired outputs for the same prompts under truthful and deceptive instructions, then test separability with both statistical divergence and classifier performance.
+
+#### Why this method
+It directly tests the stated hypothesis in a black-box setting and aligns with gaps in prior work emphasizing internals.
+
+### Implementation Details
+#### Tools and Libraries
+- Python 3.12.8
+- openai 2.28.0
+- datasets 4.0.0
+- pandas 2.3.2
+- scikit-learn 1.8.0
+- scipy 1.17.1
+- matplotlib 3.10.8
+- seaborn 0.13.2
+
+#### Algorithms/Models
+- Generation model: `gpt-4.1` (OpenAI API).
+- Classifier: TF-IDF (1-2 grams) + Logistic Regression.
+- Distribution tests: Jensen-Shannon feature divergence, MMD with permutation test.
+
+#### Hyperparameters
+| Parameter | Value | Selection Method |
+|---|---:|---|
+| model | gpt-4.1 | preferred primary model |
+| max_questions | 120 | cost/coverage tradeoff |
+| max_tokens | 80 | concise answer control |
+| temperature | 0.4 | moderate stochasticity |
+| primary_seed | 42 | fixed reproducibility |
+| robustness_seed | 7 | seed-shift robustness |
+| TF-IDF ngram_range | (1,2) | standard text baseline |
+| TF-IDF max_features | 20000 | practical capacity |
+| Logistic max_iter | 2000 | convergence safety |
+
+#### Analysis Pipeline
+1. Generate and cache raw outputs (`results/raw/*.jsonl`).
+2. Build feature table (`results/all_outputs_with_features.csv`).
+3. Run feature-level tests (Mann-Whitney U + BH-FDR).
+4. Run MMD permutation test.
+5. Train/evaluate text classifier on grouped split.
+6. Robustness check on second seed.
+7. Error analysis (confusion matrix + false positives/negatives).
+
+### Experimental Protocol
+#### Reproducibility Information
+- Number of runs for averaging: 1 primary run + 1 robustness seed run.
+- Random seeds: 42, 7.
+- Hardware detected: 2x NVIDIA RTX 3090 (24GB each).
+- GPU usage: API-based experiment, so no local GPU training batch size used.
+- Mean API latency: 1.13 s/call (median 1.01 s).
+- Total token usage: 46,142 tokens.
+
+#### Evaluation Metrics
+- AUROC/AUPRC/F1/Accuracy: detectability of lie-conditioned outputs.
+- MMD p-value: whether multivariate feature distributions differ.
+- JS divergence per feature: interpretable distribution differences.
+- Effect size (Cohen&#39;s d): practical magnitude.
+
+### Raw Results
+#### Tables
+| Method / Test | Result |
+|---|---:|
+| Primary classifier AUROC | **0.8827** |
+| Primary classifier AUPRC | 0.9032 |
+| Primary classifier F1 | 0.7750 |
+| Primary classifier Accuracy | 0.7500 |
+| AUROC permutation p-value | **0.000999** |
+| AUROC bootstrap 95% CI | **[0.798, 0.952]** |
+| MMD statistic | 0.02246 |
+| MMD permutation p-value | **0.001996** |
+| Robustness AUROC (seed 7) | **0.9103** |
+| Robustness F1 (seed 7) | 0.8527 |
+| Robustness Accuracy (seed 7) | 0.8417 |
+
+Confusion matrix (primary holdout):
+- TN 23, FP 13, FN 5, TP 31.
+
+Feature-level highlight (truthful vs lie_roleplay):
+- `punct_ratio`: significant after FDR correction (p=1.97e-13, d=0.83, JS=0.150).
+
+#### Visualizations
+- `figures/length_distribution.png`
+- `figures/pca_stylometry.png`
+- `figures/classification_performance.png`
+
+#### Output Locations
+- Metrics JSON: `results/metrics.json`
+- Feature stats: `results/feature_stats.csv`
+- All outputs/features: `results/all_outputs_with_features.csv`
+- Error analysis: `results/confusion_matrix.json`, `results/error_false_positives.csv`, `results/error_false_negatives.csv`
+- Raw API generations: `results/raw/outputs_seed_42.jsonl`, `results/raw/outputs_seed_7.jsonl`
+
+## 5. Result Analysis
+### Key Findings
+1. **Strong separability**: text-only classifier reached AUROC 0.883 on held-out questions.
+2. **Statistically significant shift**: MMD permutation test rejects equal-distribution null (p=0.001996).
+3. **Robust across seed shift**: AUROC increased to 0.910 on unseen seed-7 outputs.
+4. **Style signal is distributed**: one single feature (`punct_ratio`) is strongly significant, but most signal appears multivariate/lexical (captured by TF-IDF model).
+
+### Hypothesis Testing Results
+- H0 (no distribution difference): rejected by MMD permutation test.
+- H0 (classifier at chance): rejected by AUROC permutation test.
+- Practical significance: medium-to-large detectability; meaningful for monitoring applications.
+
+### Comparison to Baselines
+- Random baseline AUROC expectation: 0.5.
+- Observed AUROC 0.883 implies ~76.5% relative gain over random discrimination margin (`(0.883-0.5)/0.5`).
+
+### Surprises and Insights
+- Explicit lie prompts produced highly plausible falsehoods with natural style and no refusal artifacts.
+- Distinguishability did not rely on obvious disclaimers (refusal-like count = 0).
+
+### Error Analysis
+- False positives (truthful flagged as lie): 13
+- False negatives (lie flagged as truthful): 5
+- Typical failures occurred when truthful outputs were confident/concise and when deceptive outputs mimicked factual style with low lexical novelty.
+
+### Limitations
+- Single model family (`gpt-4.1`) in this run; external validity across providers needs confirmation.
+- One primary task domain (TruthfulQA questions).
+- Auxiliary jailbreak-style score was in-sample only (not held-out).
+- No human annotation layer for deception quality grading.
+
+## 6. Conclusions
+### Summary
+Yes, in this experiment the model’s output distribution under lie-inducing instructions is noticeably different from its truthful distribution. The difference is statistically significant and practically detectable from text alone.
+
+### Implications
+- Practical: enables black-box deception-risk monitoring pipelines.
+- Theoretical: supports the view that instruction-conditioned deception induces stable, measurable generation shifts.
+
+### Confidence in Findings
+Moderate-high for this model/task setting, strengthened by paired design, significance tests, and seed robustness. Confidence would increase with cross-model replication and larger prompt diversity.
+
+## 7. Next Steps
+### Immediate Follow-ups
+1. Cross-model replication on GPT-5 / Claude Sonnet 4.5 / Gemini 2.5 Pro.
+2. Out-of-domain prompts (non-factual, multilingual, longer-form writing).
+3. Strict held-out evaluation for jailbreak-style condition.
+
+### Alternative Approaches
+- Embedding-space two-sample tests and domain-adversarial classifiers.
+- Character-level stylometry and calibrated uncertainty probes.
+
+### Broader Extensions
+- Real-time moderation features for deception-risk alerts.
+- Longitudinal monitoring across model/version updates.
+
+### Open Questions
+- Which deception styles transfer across model families?
+- How much of the shift is semantic vs purely stylistic?
+- Can detectors remain robust against adversarial anti-detection prompting?
+
+## References
+- Goldowsky-Dill et al. (2025). Detecting Strategic Deception Using Linear Probes.
+- Long et al. (2025). When Truthful Representations Flip Under Deceptive Instructions?
+- Qiu et al. (2023). Latent Jailbreak.
+- Wei et al. (2023). Open Sesame! Universal Black-Box Jailbreaking.
+- Geifman et al. (2024). An Assessment of Model-On-Model Deception.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+# Research Plan: Lying Style
+
+## Motivation &amp; Novelty Assessment
+
+### Why This Research Matters
+Instruction-conditioned deception is a practical safety concern: if lie-inducing prompts produce distinct writing distributions, systems can monitor outputs for deception risk without model internals. This benefits model providers, red-teamers, and downstream users who need lightweight runtime detection and auditing tools.
+
+### Gap in Existing Work
+From `literature_review.md`, most strong results detect deception via internal activations/probes, while fewer studies test whether *output text alone* reliably separates truthful vs lie-conditioned generation under paired prompts and modern API models. Existing work also underemphasizes distribution tests plus practical black-box detectors in one unified protocol.
+
+### Our Novel Contribution
+We test a black-box, output-only hypothesis on a current real API model (OpenAI GPT-4.1 family), using paired truthful vs lie-conditioned responses to identical prompts. We combine stylometric distribution divergence (JS, Wasserstein, MMD) with downstream detectability (cross-validated classifier AUROC/F1) and robustness checks across seeds and instruction variants.
+
+### Experiment Justification
+- Experiment 1: Paired truthful vs lie generation on factual prompts. Needed to isolate instruction effect while controlling topic.
+- Experiment 2: Distribution divergence analysis (length/lexical/syntactic proxies + embedding geometry). Needed to quantify “noticeably different” beyond classifier accuracy.
+- Experiment 3: Output-only deception classification with strict train/test split and permutation significance. Needed to assess practical detectability.
+- Experiment 4: Robustness across multiple lie instructions and decoding seeds. Needed to rule out brittle prompt artifacts.
+
+## Research Question
+Do outputs from a language model under lie-inducing instructions (roleplay/jailbreak framing) come from a measurably different text distribution than outputs under truthful instructions?
+
+## Background and Motivation
+Prior studies show deception signals in internal representations and behavior under deceptive prompts. Operationally, many deployments only have access to text outputs, so establishing output-level separability is necessary for practical monitoring and model governance.
+
+## Hypothesis Decomposition
+- H1 (distribution shift): Lie-conditioned outputs differ in stylometric/semantic feature distribution from truthful outputs.
+- H2 (detectability): A text-only classifier can distinguish conditions significantly above chance.
+- H3 (robustness): The shift persists across multiple deceptive prompt templates and random seeds.
+
+Independent variables:
+- Instruction condition: truthful vs lie-roleplay vs jailbreak-style lie.
+- Decoding seed.
+
+Dependent variables:
+- Divergence metrics: Jensen-Shannon, Wasserstein, MMD.
+- Classifier metrics: AUROC, F1, accuracy.
+- Auxiliary style metrics: length, hedging rate, certainty markers, punctuation entropy, type-token ratio.
+
+Success criteria:
+- AUROC &gt;= 0.75 on held-out split for truthful vs lie (text-only).
+- At least two divergence metrics significantly &gt; permutation null (p &lt; 0.05, FDR corrected).
+- Effect size at least medium (Cohen&#39;s d &gt;= 0.5) on &gt;=2 core features.
+
+Alternative explanations:
+- Prompt-template artifacts drive separation rather than deception itself.
+- Length effects dominate stylometric metrics.
+- Topic imbalance across prompt subsets.
+Mitigations:
+- Paired prompting, length-normalized features, topic-stratified splits, robustness checks.
+
+## Proposed Methodology
+
+### Approach
+Use `truthful_qa` questions as shared prompt backbone. For each question, request short answers under different system instructions (truthful baseline vs lie-roleplay vs jailbreak-like deceptive framing), keeping temperature/max token settings fixed except in seed robustness runs. Build a feature matrix from outputs; evaluate divergence and classification with statistical testing.
+
+### Experimental Steps
+1. Validate environment, seeds, and API access; log versions and hardware.
+2. Load and quality-check datasets (`truthful_qa_generation`, jailbreak prompt banks).
+3. Construct evaluation prompt set (target n=200 questions; balanced categories where available).
+4. Generate outputs with real API calls for each condition; cache raw JSONL with metadata.
+5. Extract textual features and embeddings; save tidy analysis tables.
+6. Compute descriptive statistics and divergences with permutation tests.
+7. Train/evaluate baselines and main classifier using stratified CV + held-out test.
+8. Run robustness ablations (additional lie template, extra seed).
+9. Perform error analysis on false positives/false negatives.
+
+### Baselines
+- Random/majority classifier baseline.
+- Length-only logistic regression baseline.
+- TF-IDF + logistic regression (main practical baseline).
+- Optional embedding + linear classifier as stronger comparator.
+
+### Evaluation Metrics
+- Classification: AUROC, AUPRC, F1, accuracy, balanced accuracy.
+- Distribution: Jensen-Shannon divergence, Wasserstein distance, MMD (RBF kernel).
+- Effect size/statistics: Cohen&#39;s d, 95% bootstrap CI, permutation p-values.
+
+### Statistical Analysis Plan
+- Null hypotheses:
+  - H0-1: No difference in feature distributions between truthful and lie conditions.
+  - H0-2: Classifier AUROC equals chance (0.5).
+- Tests:
+  - Mann-Whitney U or Welch t-test (assumption-dependent) for feature differences.
+  - Permutation test for AUROC and MMD significance.
+  - Benjamini-Hochberg FDR for multiple comparisons.
+- Alpha: 0.05.
+- Report effect sizes and confidence intervals alongside p-values.
+
+## Expected Outcomes
+Support for hypothesis if lie-conditioned outputs show consistent divergence and are classifiable above chance across templates/seeds. Refutation if distributions strongly overlap and classifiers fail to generalize.
+
+## Timeline and Milestones
+- Phase 0-1 planning: complete now.
+- Phase 2 setup + data checks: ~20 min.
+- Phase 3 implementation: ~60 min.
+- Phase 4 experiments: ~60 min (API latency dependent).
+- Phase 5 analysis: ~40 min.
+- Phase 6 documentation + validation: ~30 min.
+Buffer (25%) included for retries/debugging.
+
+## Potential Challenges
+- API rate limits/cost variability: use batching, retries, and caching.
+- Safety refusals in lie condition: keep prompts non-harmful and focused on factual lying.
+- Small-sample instability: run bootstrap CIs and multiple seeds.
+- Confounding by verbosity: include normalized features and length-matched checks.
+
+## Success Criteria
+- End-to-end reproducible pipeline with saved raw outputs and analysis artifacts.
+- Statistically supported conclusion regarding distributional difference.
+- REPORT.md with actual tables/figures and transparent limitations.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review: Lying Style in Language Models
+
+## Review Scope
+
+### Research Question
+Do language models produce measurably different text distributions when explicitly instructed to lie (e.g., jailbreak/roleplay/deceptive prompts) compared with truthful/normal instructions?
+
+### Inclusion Criteria
+- Studies on LLM deception, lying, strategic misrepresentation, or jailbreak behavior.
+- Papers with concrete methodology and datasets/benchmarks.
+- Papers with direct relevance to text-output or representation-level distribution shifts.
+- Priority window: 2023-2025, with foundational references where needed.
+
+### Exclusion Criteria
+- Non-LLM deception work without actionable methods for this hypothesis.
+- Papers without usable datasets/code or with minimal methodological detail.
+
+### Time Frame
+- Primary: 2023-2025.
+
+### Sources
+- arXiv API/manual search.
+- Local `paper-finder` script attempted first; service unavailable on localhost.
+
+## Search Log
+
+| Date | Query | Source | Results | Notes |
+|------|-------|--------|---------|------|
+| 2026-03-15 | &#34;llm deception truthful deceptive text&#34; | arXiv API | 8 | Strongly relevant deception hits |
+| 2026-03-15 | &#34;language model hallucination truthfulness generation&#34; | arXiv API | 8 | Some relevance, mixed domain |
+| 2026-03-15 | &#34;jailbreak roleplay large language models safety&#34; | arXiv API | 7 | Useful jailbreak baseline papers |
+
+## Screening Results
+
+| Paper | Title Screen | Abstract Screen | Full-Text | Notes |
+|------|--------------|-----------------|----------|------|
+| 2507.22149 | Include | Include | Include (deep) | Closest match to hypothesis |
+| 2502.03407 | Include | Include | Include (deep) | Strong detection baseline |
+| 2403.09676 | Include | Include | Include (deep) | Deception taxonomy and risk framing |
+| 2405.12999 | Include | Include | Abstract+methods skim | Interactive model deception |
+| 2307.08487 | Include | Include | Abstract+intro skim | Benchmark for jailbreak conditions |
+| 2309.01446 | Include | Include | Abstract+intro skim | Universal black-box jailbreaks |
+| 2403.00867 | Include | Include | Abstract+methods skim | Jailbreak detection baseline |
+| 2310.00905 | Include | Include | Abstract skim | Condition shifts across languages |
+
+## Key Papers
+
+### Paper 1: Detecting Strategic Deception Using Linear Probes
+- **Authors**: Goldowsky-Dill et al.
+- **Year**: 2025
+- **Source**: arXiv (2502.03407)
+- **Key Contribution**: Demonstrates high-AUROC detection of deceptive behavior from internal activations.
+- **Methodology**: Linear probes over hidden activations (logistic regression/LDA variants), multi-setting evaluation.
+- **Datasets Used**: Roleplaying, Insider Trading Report/Confirmation, Sandbagging, control chat data.
+- **Baselines**: Black-box GPT-4o classifier and probe variants.
+- **Results**: AUROC roughly 0.96-0.999 in key settings; high recall at 1% FPR in evaluated scenarios.
+- **Code Available**: Yes (ApolloResearch/deception-detection).
+- **Relevance to Our Research**: Strong baseline for deception detection; suggests distribution shifts may also be detectable from outputs.
+
+### Paper 2: When Truthful Representations Flip Under Deceptive Instructions?
+- **Authors**: Long et al.
+- **Year**: 2025
+- **Source**: arXiv (2507.22149)
+- **Key Contribution**: Directly studies representational &#34;flip&#34; under deceptive instructions vs truthful/neutral prompts.
+- **Methodology**: Layerwise probing + Sparse Autoencoder (SAE) feature-shift analysis.
+- **Datasets Used**: Curated factual datasets and more complex claim sets (e.g., CommonClaim/CounterFact-style sets).
+- **Baselines**: Truthful vs neutral vs deceptive prompt conditions; LR and TTPD probes.
+- **Results**: Deceptive instructions induce stronger feature-space shifts; truthful and neutral states are closer.
+- **Code Available**: Yes (ivyllll/truthful-representation-flip).
+- **Relevance to Our Research**: Closest conceptual and methodological precedent for testing distributional differences under lie instructions.
+
+### Paper 3: Latent Jailbreak
+- **Authors**: Qiu et al.
+- **Year**: 2023
+- **Source**: arXiv (2307.08487)
+- **Key Contribution**: Benchmark framing for latent jailbreak prompts and robustness evaluation.
+- **Methodology**: Prompt-template-based jailbreak evaluation across models.
+- **Datasets Used**: Latent-jailbreak prompt/data assets.
+- **Baselines**: Safety robustness under jailbreak prompts.
+- **Results**: Demonstrates substantial prompt-induced safety behavior changes.
+- **Code Available**: Yes (latent-jailbreak repo).
+- **Relevance to Our Research**: Supplies practical lie/jailbreak prompt conditions to generate deceptive outputs.
+
+### Paper 4: Open Sesame! Universal Black Box Jailbreaking of LLMs
+- **Authors**: Wei et al.
+- **Year**: 2023
+- **Source**: arXiv (2309.01446)
+- **Key Contribution**: Universal transfer jailbreak prompts in black-box settings.
+- **Methodology**: Automated adversarial prompt search/transfer.
+- **Datasets Used**: Safety prompt suites.
+- **Results**: High transferability of jailbreak prompts across target models.
+- **Code Available**: Not confirmed during this run.
+- **Relevance to Our Research**: Supports use of jailbreak prompts as intervention for inducing deceptive style shifts.
+
+### Paper 5: Gradient Cuff
+- **Authors**: Ye et al.
+- **Year**: 2024
+- **Source**: arXiv (2403.00867)
+- **Key Contribution**: Refusal-loss-landscape-based jailbreak detection.
+- **Methodology**: Gradient/refusal behavior analysis.
+- **Datasets Used**: Jailbreak attack corpora.
+- **Results**: Competitive detection of attack/jailbreak conditions.
+- **Code Available**: Not confirmed during this run.
+- **Relevance to Our Research**: Useful detector baseline to compare against output-distribution classifiers.
+
+### Paper 6: An Assessment of Model-On-Model Deception
+- **Authors**: Geifman et al.
+- **Year**: 2024
+- **Source**: arXiv (2405.12999)
+- **Key Contribution**: Studies deceptive behavior in model-model interaction settings.
+- **Methodology**: Structured interactive tasks measuring deceptive actions.
+- **Datasets Used**: Task-specific interaction scenarios.
+- **Results**: Evidence that deception emerges under strategic settings.
+- **Code Available**: Not confirmed during this run.
+- **Relevance to Our Research**: Broadens experimental settings beyond static QA.
+
+### Paper 7: All Languages Matter
+- **Authors**: Casadei et al.
+- **Year**: 2023
+- **Source**: arXiv (2310.00905)
+- **Key Contribution**: Safety robustness varies across languages.
+- **Methodology**: Multilingual prompt evaluation.
+- **Datasets Used**: Multilingual safety/jailbreak prompt sets.
+- **Results**: Significant cross-lingual variation in unsafe responses.
+- **Code Available**: Not confirmed during this run.
+- **Relevance to Our Research**: Suggests language condition should be controlled in distribution-shift studies.
+
+### Paper 8: Unmasking the Shadows of AI
+- **Authors**: Dey
+- **Year**: 2024
+- **Source**: arXiv (2403.09676)
+- **Key Contribution**: Deception taxonomy and governance framing.
+- **Methodology**: Survey/discussion paper.
+- **Datasets Used**: N/A (conceptual).
+- **Results**: Consolidates deception categories and risks.
+- **Code Available**: No.
+- **Relevance to Our Research**: Useful conceptual framework for labeling lie/deception output types.
+
+## Common Methodologies
+- Prompt-conditioned behavior testing: truthful vs deceptive/jailbreak instruction contrasts.
+- Probe-based detection: linear probing of hidden states (strongest in 2502.03407, 2507.22149).
+- Robustness benchmarking: jailbreak prompts and refusal/safety metrics.
+
+## Standard Baselines
+- Black-box classifier over outputs (including strong LLM judge baselines).
+- Linear probe over final/mid-layer activations.
+- Refusal-oriented jailbreak detectors (e.g., loss-landscape or refusal-pattern methods).
+
+## Evaluation Metrics
+- AUROC, AUPRC, recall at low FPR for deception detection.
+- Attack success rate / jailbreak success rate.
+- Accuracy/F1 when framing deception detection as classification.
+- Distribution divergence metrics for text: Jensen-Shannon, Wasserstein, MMD (recommended for this project).
+
+## Datasets in the Literature
+- Roleplaying deception scenarios.
+- Insider trading concealment scenarios.
+- Sandbagging datasets.
+- Jailbreak prompt corpora.
+- Truthfulness factual QA benchmarks.
+
+## Gaps and Opportunities
+- Most work emphasizes internal activations; fewer studies test pure text-distribution separability under controlled lying instructions.
+- Cross-model generalization of deception-style detectors is underexplored.
+- Limited standardized datasets explicitly pairing truthful and deceptive responses for the same prompts.
+
+## Recommendations for Our Experiment
+- **Recommended datasets**:
+- `truthful_qa` for factual truth-conditioned prompting.
+- `TrustAIRLab/in-the-wild-jailbreak-prompts` + `ChatGPT-Jailbreak-Prompts` for deception-inducing instruction pools.
+- **Recommended baselines**:
+- Bag-of-ngrams/logistic regression on outputs.
+- Transformer-based text classifier (frozen encoder + linear head).
+- Optional hidden-state probe baseline if model internals are available.
+- **Recommended metrics**:
+- AUROC/F1 for condition classification.
+- Jensen-Shannon divergence and MMD between truthful vs lie-conditioned output distributions.
+- **Methodological considerations**:
+- Pair prompts across truthful and deceptive instructions to isolate instruction effect.
+- Control for topic, length, temperature, and language.
+- Measure both in-domain and out-of-domain generalization.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. AUTHOR
+   - Use this exact author line in the \author{} block: Ari Holtzman and NeuriCo
+
+3. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+4. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+5. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+6. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+7. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+8. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+9. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+10. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   \author{Ari Holtzman and NeuriCo}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Command templates are pre-copied to paper_draft/commands/:
+   - math.tex: Math notation macros
+   - general.tex: Formatting macros
+   - macros.tex: Project-specific term definitions (customize this for your paper)
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read .codex/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

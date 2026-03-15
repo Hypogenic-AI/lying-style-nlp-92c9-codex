@@ -1,0 +1,77 @@
+[
+  {
+    "dataset": "truthful_qa",
+    "config": "generation",
+    "saved_to": "datasets/truthful_qa_generation",
+    "splits": {
+      "validation": {
+        "rows": 817,
+        "columns": [
+          "type",
+          "category",
+          "question",
+          "best_answer",
+          "correct_answers",
+          "incorrect_answers",
+          "source"
+        ]
+      }
+    }
+  },
+  {
+    "dataset": "rubend18/ChatGPT-Jailbreak-Prompts",
+    "config": null,
+    "saved_to": "datasets/chatgpt_jailbreak_prompts",
+    "splits": {
+      "train": {
+        "rows": 79,
+        "columns": [
+          "Name",
+          "Prompt",
+          "Votes",
+          "Jailbreak Score",
+          "GPT-4"
+        ]
+      }
+    }
+  },
+  {
+    "dataset": "TrustAIRLab/in-the-wild-jailbreak-prompts",
+    "config": "jailbreak_2023_12_25",
+    "saved_to": "datasets/itw_jailbreak_2023_12_25",
+    "splits": {
+      "train": {
+        "rows": 1405,
+        "columns": [
+          "platform",
+          "source",
+          "prompt",
+          "jailbreak",
+          "created_at",
+          "date",
+          "community",
+          "community_id",
+          "previous_community_id"
+        ]
+      }
+    }
+  },
+  {
+    "dataset": "TrustAIRLab/in-the-wild-jailbreak-prompts",
+    "config": "regular_2023_12_25",
+    "saved_to": "datasets/itw_regular_2023_12_25",
+    "splits": {
+      "train": {
+        "rows": 13735,
+        "columns": [
+          "platform",
+          "source",
+          "prompt",
+          "jailbreak",
+          "created_at",
+          "date"
+        ]
+      }
+    }
+  }
+]

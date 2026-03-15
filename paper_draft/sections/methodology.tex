@@ -1,0 +1,33 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Task and Hypothesis}
+We test whether lie-inducing instructions create a different output distribution than truthful instructions for the same user questions. Let $x$ be a question and $y_c$ be model output under condition $c \in \{\text{truthful}, \text{lie}\}$. Our null hypothesis is $P(y_{\text{truthful}})=P(y_{\text{lie}})$; our alternative is distribution shift and practical separability.
+
+\subsection{Data Construction}
+We use \truthfulqa generation prompts \citep{lin2022truthfulqa} as the primary backbone. From 817 validation questions, we sample 120 questions with fixed seed and generate paired outputs under truthful and lie-roleplay instructions using \gptmodel.
+
+Generation controls are fixed across conditions: temperature 0.4, max tokens 80, and fixed seed for each run. The primary run uses seed 42; a robustness run uses seed 7. The resulting primary classification dataset has 240 outputs (120 per class), split by \texttt{GroupShuffleSplit} on question ID to avoid leakage (train 168, test 72).
+
+Data quality checks report 0 missing outputs, 0 duplicate \texttt{(question\_id, condition, seed)} tuples, 0\% API errors, and 0 refusal-like outputs.
+
+\subsection{Features and Models}
+We extract two feature families.
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item \textbf{Lexical model features:} unigram+bigram TF-IDF with max 20,000 features.
+    \item \textbf{Stylometric features:} length, punctuation/character ratios, lexical diversity, hedging and certainty markers.
+\end{itemize}
+
+Our primary detector is logistic regression over TF-IDF features with \texttt{max\_iter=2000}. We compare against chance-level random discrimination (AUROC 0.5) as the minimal baseline and report additional descriptive feature statistics.
+
+\subsection{Statistical Testing and Metrics}
+We report AUROC, AUPRC, F1, accuracy, and balanced accuracy on held-out questions. For statistical significance, we use:
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item permutation test on AUROC ($n=1000$ permutations);
+    \item bootstrap 95\% CI for AUROC ($n=2000$ valid bootstrap samples);
+    \item \mmd two-sample test with RBF kernel and permutation null ($n=500$);
+    \item feature-level Mann--Whitney U tests with Benjamini--Hochberg correction.
+\end{itemize}
+
+\subsection{Implementation and Reproducibility}
+The pipeline runs in Python 3.12.8 with \texttt{openai==2.28.0}, \texttt{datasets==4.0.0}, \texttt{pandas==2.3.2}, \texttt{scikit-learn==1.8.0}, and \texttt{scipy==1.17.1}. Hardware in the experiment environment includes two RTX 3090 GPUs, though generation is API-based. Mean API latency is 1.13 s/call (median 1.01), with 46,142 total tokens consumed.

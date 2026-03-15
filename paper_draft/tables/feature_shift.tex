@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Selected stylometric feature shifts (truthful vs.
+lie-roleplay, seed 42). We report two-sided test statistics with BH-FDR correction.}
+\label{tab:feature-shift}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Feature & Truthful mean & Lie mean & Cohen's $d$ & FDR-corrected $p$ \\
+\midrule
+\texttt{punct\_ratio} & 0.0383 & 0.0236 & 0.83 & $1.97\times10^{-13}$ \\
+\texttt{n\_words} & 41.43 & 45.05 & -0.20 & 0.2190 \\
+\texttt{upper\_ratio} & 0.0307 & 0.0243 & 0.26 & 0.0998 \\
+\texttt{certainty\_ratio} & 0.0010 & 0.0019 & -0.16 & 0.1652 \\
+\bottomrule
+\end{tabular}
+\end{table}

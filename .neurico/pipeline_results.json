@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "stages": {
+    "resource_finder": {
+      "success": true,
+      "completion_marker": "/workspaces/lying-style-nlp-92c9-codex/.resource_finder_complete",
+      "outputs": {
+        "literature_review": "/workspaces/lying-style-nlp-92c9-codex/literature_review.md",
+        "resources_catalog": "/workspaces/lying-style-nlp-92c9-codex/resources.md",
+        "papers_dir": "/workspaces/lying-style-nlp-92c9-codex/papers",
+        "datasets_dir": "/workspaces/lying-style-nlp-92c9-codex/datasets",
+        "code_dir": "/workspaces/lying-style-nlp-92c9-codex/code"
+      },
+      "log_file": "/workspaces/lying-style-nlp-92c9-codex/logs/resource_finder_codex.log",
+      "transcript_file": "/workspaces/lying-style-nlp-92c9-codex/logs/resource_finder_codex_transcript.jsonl",
+      "elapsed_time": 491.96878838539124
+    },
+    "experiment_runner": {
+      "success": true,
+      "return_code": 0,
+      "elapsed_time": 1041.2660279273987,
+      "log_file": "/workspaces/lying-style-nlp-92c9-codex/logs/execution_codex.log",
+      "transcript_file": "/workspaces/lying-style-nlp-92c9-codex/logs/execution_codex_transcript.jsonl"
+    }
+  },
+  "work_dir": "/workspaces/lying-style-nlp-92c9-codex"
+}

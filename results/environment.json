@@ -1,0 +1,4 @@
+{
+  "python": "Python 3.12.8",
+  "gpu": "name, memory.total [MiB], memory.free [MiB]\nNVIDIA GeForce RTX 3090, 24576 MiB, 24161 MiB\nNVIDIA GeForce RTX 3090, 24576 MiB, 24161 MiB"
+}

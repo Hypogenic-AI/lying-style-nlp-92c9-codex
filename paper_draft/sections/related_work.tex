@@ -1,0 +1,15 @@
+\section{Related Work}
+\label{sec:related}
+
+\para{Deception detection from internal representations.}
+Recent work shows high deception detectability with probes over hidden activations \citep{goldowskydill2025detecting,long2025truthful}. These studies establish that deceptive instructions alter latent states, often with very strong AUROC. Unlike this line, we focus on black-box access where internals are unavailable.
+
+\para{Jailbreak and instruction-induced behavior shifts.}
+Prompt attacks and jailbreak prompts can transfer across models and induce major behavior changes \citep{qiu2023latent,wei2023opensesame}. Additional detection work targets jailbreak conditions and refusal dynamics \citep{ye2024gradient}. We build on this insight by testing whether lie-inducing instructions produce measurable shifts even when we only analyze final text.
+
+\para{Deception risk framing and broader settings.}
+Conceptual and empirical work on model deception emphasizes governance and strategic risk \citep{dey2024unmasking,geifman2024assessment}. Multilingual safety studies also show condition-sensitive variation \citep{casadei2023all}. We therefore keep our setup controlled (English factual QA, paired prompts) and treat cross-domain or multilingual transfer as future work.
+
+\para{Positioning.}
+Our study complements representation-level work with a practical output-only baseline: paired truthful vs.
+lie-roleplay generation, explicit two-sample testing, and held-out deception-condition classification.
